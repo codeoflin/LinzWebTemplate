@@ -23,7 +23,7 @@ dotnet new -u ./
 
 |参数| 描述 |
 |--- | --- |
-| -N -NoPicture | 是否不使用模板图片,设为true则无图片 | 
+|  |  | 
 
 ```shell
 dotnet new ocvc -n 工程名 参数...

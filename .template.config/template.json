@@ -13,10 +13,10 @@
 	"sourceName": "LinzWebTemplate",
 	"preferNameDirectory": true,
 	"symbols": {
-		"NoGit": {
+		"Helper": {
 			"type": "parameter",
 			"dataType": "bool",
-			"defaultValue": "false"
+			"defaultValue": "true"
 		}
 	},
 	"sources": [
@@ -33,9 +33,9 @@
 					]
 				},
 				{
-					"condition": "(!NoGit)",
+					"condition": "(!Helper)",
 					"exclude": [
-						".git/**/*"
+						"Helper/**/*"
 					]
 				}
 			]

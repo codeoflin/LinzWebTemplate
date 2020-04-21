@@ -5,8 +5,9 @@ using Microsoft.AspNetCore.Mvc;
 using System.Collections.Generic;
 using Microsoft.AspNetCore.Authorization;
 using System;
+#if(Helper)
 using LinzWebTemplate.Helper;
-
+#endif
 namespace LinzWebTemplate.Controllers
 {
     /// <summary>
