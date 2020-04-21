@@ -1,0 +1,44 @@
+{
+	"author": "linz",
+	"classifications": [
+		"console/linzweb"
+	],
+	"name": "LinzWeb",
+	"identity": "LinzWeb",
+	"shortName": "linzweb",
+	"tags": {
+		"language": "C#",
+		"type": "project"
+	},
+	"sourceName": "LinzWebTemplate",
+	"preferNameDirectory": true,
+	"symbols": {
+		"NoGit": {
+			"type": "parameter",
+			"dataType": "bool",
+			"defaultValue": "false"
+		}
+	},
+	"sources": [
+		{
+			"modifiers": [
+				{
+					"condition": "true",
+					"exclude": [
+						".git/**/*",
+						".vscode/**/*",
+						"obj",
+						"bin",
+						"node.md"
+					]
+				},
+				{
+					"condition": "(!NoGit)",
+					"exclude": [
+						".git/**/*"
+					]
+				}
+			]
+		}
+	]
+}
