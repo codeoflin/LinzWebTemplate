@@ -26,6 +26,10 @@ namespace LinzWebTemplate.Helper
         /// RAW_ARGB32
         ///</summary>
         RAW_ARGB32 = 2,
+        ///<summary>
+        /// RAW_BGR24
+        ///</summary>
+        RAW_BGR24 = 3,
     }
 
     /// <summary>
@@ -44,8 +48,8 @@ namespace LinzWebTemplate.Helper
         /// <returns>图片</returns>
         public static Image Base64ToImg(this string base64, ImageFormat format = ImageFormat.FILE, int width = 0, int height = 0)
         {
-            var heads=new string[]{"png","jgp","jpg","jpeg"};
-            foreach(var head in heads)base64 = base64.Replace($"data:image/{head};base64,", "");
+            var heads = new string[] { "png", "jgp", "jpg", "jpeg" };
+            foreach (var head in heads) base64 = base64.Replace($"data:image/{head};base64,", "");
             var bytes = Convert.FromBase64String(base64);
             return bytes.ToImage(format, width, height);
         }
@@ -113,16 +117,30 @@ namespace LinzWebTemplate.Helper
                 case ImageFormat.RAW_RGB24:
                     {
                         var data = img.LockBits(new Rectangle(0, 0, img.Width, img.Height), ImageLockMode.ReadOnly, PixelFormat.Format24bppRgb);
-                        var raw = new byte[img.Width * img.Height * 3];
-                        Marshal.Copy(data.Scan0, raw, 0, raw.Length);
+                        buff = new byte[img.Width * img.Height * 3];
+                        Marshal.Copy(data.Scan0, buff, 0, buff.Length);
                         img.UnlockBits(data);
                         break;
                     }
                 case ImageFormat.RAW_ARGB32:
                     {
                         var data = img.LockBits(new Rectangle(0, 0, img.Width, img.Height), ImageLockMode.ReadOnly, PixelFormat.Format32bppArgb);
-                        var raw = new byte[img.Width * img.Height * 4];
-                        Marshal.Copy(data.Scan0, raw, 0, raw.Length);
+                        buff = new byte[img.Width * img.Height * 4];
+                        Marshal.Copy(data.Scan0, buff, 0, buff.Length);
+                        img.UnlockBits(data);
+                        break;
+                    }
+                case ImageFormat.RAW_BGR24:
+                    {
+                        var data = img.LockBits(new Rectangle(0, 0, img.Width, img.Height), ImageLockMode.ReadOnly, PixelFormat.Format24bppRgb);
+                        buff = new byte[img.Width * img.Height * 3];
+                        Marshal.Copy(data.Scan0, buff, 0, buff.Length);
+                        for (int i = 0; i < buff.Length; i += 3)
+                        {
+                            byte tmp = buff[i];
+                            buff[i] = buff[i + 2];
+                            buff[i + 2] = tmp;
+                        }
                         img.UnlockBits(data);
                         break;
                     }
@@ -153,7 +171,7 @@ namespace LinzWebTemplate.Helper
                 case ImageFormat.RAW_RGB24:
                     {
                         img = new Bitmap(width, height);
-                        var imglocker = img.LockBits(new Rectangle(0, 0, img.Width, img.Height), ImageLockMode.ReadOnly, PixelFormat.Format24bppRgb);
+                        var imglocker = img.LockBits(new Rectangle(0, 0, img.Width, img.Height), ImageLockMode.WriteOnly, PixelFormat.Format24bppRgb);
                         Marshal.Copy(data, 0, imglocker.Scan0, data.Length);
                         img.UnlockBits(imglocker);
                         break;
@@ -161,8 +179,23 @@ namespace LinzWebTemplate.Helper
                 case ImageFormat.RAW_ARGB32:
                     {
                         img = new Bitmap(width, height);
-                        var imglocker = img.LockBits(new Rectangle(0, 0, img.Width, img.Height), ImageLockMode.ReadOnly, PixelFormat.Format32bppArgb);
+                        var imglocker = img.LockBits(new Rectangle(0, 0, img.Width, img.Height), ImageLockMode.WriteOnly, PixelFormat.Format32bppArgb);
                         Marshal.Copy(data, 0, imglocker.Scan0, data.Length);
+                        img.UnlockBits(imglocker);
+                        break;
+                    }
+                case ImageFormat.RAW_BGR24:
+                    {
+                        img = new Bitmap(width, height);
+                        var imglocker = img.LockBits(new Rectangle(0, 0, img.Width, img.Height), ImageLockMode.WriteOnly, PixelFormat.Format24bppRgb);
+                        var data2 = new byte[data.Length];
+                        for (int i = 0; i < data.Length; i += 3)
+                        {
+                            data2[0] = data[2];
+                            data2[1] = data[1];
+                            data2[2] = data[0];
+                        }
+                        Marshal.Copy(data2, 0, imglocker.Scan0, data.Length);
                         img.UnlockBits(imglocker);
                         break;
                     }
@@ -272,5 +305,19 @@ namespace LinzWebTemplate.Helper
         {
             return Resize((Bitmap)img, size);
         }
+
+        /// <summary>
+        /// 可以对图像进行简单的处理
+        /// </summary>
+        /// <param name="img"></param>
+        /// <param name="callback"></param>
+        public static void Modify(this Image img, Action<Graphics> callback)
+        {
+            var g = Graphics.FromImage(img);
+            callback(g);
+            g.Flush();
+            g.Dispose();
+        }
+
     }//End Class
 }
