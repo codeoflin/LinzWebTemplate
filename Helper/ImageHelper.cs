@@ -30,6 +30,10 @@ namespace LinzWebTemplate.Helper
         /// RAW_BGR24
         ///</summary>
         RAW_BGR24 = 3,
+        ///<summary>
+        /// RAW_RGBA32
+        ///</summary>
+        RAW_RGBA32 = 4,
     }
 
     /// <summary>
@@ -93,6 +97,7 @@ namespace LinzWebTemplate.Helper
             return ImgToBytes((Bitmap)img, format, fileformat);
         }
 
+
         /// <summary>
         /// 图片转byte数组
         /// </summary>
@@ -116,32 +121,64 @@ namespace LinzWebTemplate.Helper
                     }
                 case ImageFormat.RAW_RGB24:
                     {
-                        var data = img.LockBits(new Rectangle(0, 0, img.Width, img.Height), ImageLockMode.ReadOnly, PixelFormat.Format24bppRgb);
                         buff = new byte[img.Width * img.Height * 3];
-                        Marshal.Copy(data.Scan0, buff, 0, buff.Length);
+                        var bgrabuff = new byte[img.Width * img.Height * 4];
+                        var data = img.LockBits(new Rectangle(0, 0, img.Width, img.Height), ImageLockMode.ReadOnly, PixelFormat.Format32bppArgb);
+                        Marshal.Copy(data.Scan0, bgrabuff, 0, bgrabuff.Length);
                         img.UnlockBits(data);
+                        for (int i = 0; i < img.Width * img.Height; i++)
+                        {
+                            buff[i * 3 + 0] = bgrabuff[i * 4 + 2];
+                            buff[i * 3 + 1] = bgrabuff[i * 4 + 1];
+                            buff[i * 3 + 2] = bgrabuff[i * 4 + 0];
+                        }
                         break;
                     }
                 case ImageFormat.RAW_ARGB32:
                     {
-                        var data = img.LockBits(new Rectangle(0, 0, img.Width, img.Height), ImageLockMode.ReadOnly, PixelFormat.Format32bppArgb);
                         buff = new byte[img.Width * img.Height * 4];
-                        Marshal.Copy(data.Scan0, buff, 0, buff.Length);
+                        var bgrabuff = new byte[img.Width * img.Height * 4];
+                        var data = img.LockBits(new Rectangle(0, 0, img.Width, img.Height), ImageLockMode.ReadOnly, PixelFormat.Format32bppArgb);
+                        Marshal.Copy(data.Scan0, bgrabuff, 0, bgrabuff.Length);
                         img.UnlockBits(data);
+                        for (int i = 0; i < img.Width * img.Height; i++)
+                        {
+                            buff[i * 4 + 0] = bgrabuff[i * 4 + 3];
+                            buff[i * 4 + 1] = bgrabuff[i * 4 + 2];
+                            buff[i * 4 + 2] = bgrabuff[i * 4 + 1];
+                            buff[i * 4 + 3] = bgrabuff[i * 4 + 0];
+                        }
                         break;
                     }
                 case ImageFormat.RAW_BGR24:
                     {
-                        var data = img.LockBits(new Rectangle(0, 0, img.Width, img.Height), ImageLockMode.ReadOnly, PixelFormat.Format24bppRgb);
                         buff = new byte[img.Width * img.Height * 3];
-                        Marshal.Copy(data.Scan0, buff, 0, buff.Length);
-                        for (int i = 0; i < buff.Length; i += 3)
-                        {
-                            byte tmp = buff[i];
-                            buff[i] = buff[i + 2];
-                            buff[i + 2] = tmp;
-                        }
+                        var bgrabuff = new byte[img.Width * img.Height * 4];
+                        var data = img.LockBits(new Rectangle(0, 0, img.Width, img.Height), ImageLockMode.ReadOnly, PixelFormat.Format32bppArgb);
+                        Marshal.Copy(data.Scan0, bgrabuff, 0, bgrabuff.Length);
                         img.UnlockBits(data);
+                        for (int i = 0; i < img.Width * img.Height; i++)
+                        {
+                            buff[i * 3 + 0] = bgrabuff[i * 4 + 0];
+                            buff[i * 3 + 1] = bgrabuff[i * 4 + 1];
+                            buff[i * 3 + 2] = bgrabuff[i * 4 + 2];
+                        }
+                        break;
+                    }
+                case ImageFormat.RAW_RGBA32:
+                    {
+                        buff = new byte[img.Width * img.Height * 4];
+                        var bgrabuff = new byte[img.Width * img.Height * 4];
+                        var data = img.LockBits(new Rectangle(0, 0, img.Width, img.Height), ImageLockMode.ReadOnly, PixelFormat.Format32bppArgb);
+                        Marshal.Copy(data.Scan0, bgrabuff, 0, bgrabuff.Length);
+                        img.UnlockBits(data);
+                        for (int i = 0; i < img.Width * img.Height; i++)
+                        {
+                            buff[i * 4 + 0] = bgrabuff[i * 4 + 2];
+                            buff[i * 4 + 1] = bgrabuff[i * 4 + 1];
+                            buff[i * 4 + 2] = bgrabuff[i * 4 + 0];
+                            buff[i * 4 + 3] = bgrabuff[i * 4 + 3];
+                        }
                         break;
                     }
                 default: break;
@@ -171,31 +208,64 @@ namespace LinzWebTemplate.Helper
                 case ImageFormat.RAW_RGB24:
                     {
                         img = new Bitmap(width, height);
-                        var imglocker = img.LockBits(new Rectangle(0, 0, img.Width, img.Height), ImageLockMode.WriteOnly, PixelFormat.Format24bppRgb);
-                        Marshal.Copy(data, 0, imglocker.Scan0, data.Length);
+                        var imglocker = img.LockBits(new Rectangle(0, 0, img.Width, img.Height), ImageLockMode.WriteOnly, PixelFormat.Format32bppPArgb);
+                        var bgrabuff = new byte[img.Width * img.Height * 4];
+                        for (int i = 0; i < img.Width * img.Height; i++)
+                        {
+                            bgrabuff[i * 4 + 0] = data[i * 3 + 2];
+                            bgrabuff[i * 4 + 1] = data[i * 3 + 1];
+                            bgrabuff[i * 4 + 2] = data[i * 3 + 0];
+                            bgrabuff[i * 4 + 3] = 0xFF;
+                        }
+                        Marshal.Copy(bgrabuff, 0, imglocker.Scan0, bgrabuff.Length);
                         img.UnlockBits(imglocker);
                         break;
                     }
                 case ImageFormat.RAW_ARGB32:
                     {
                         img = new Bitmap(width, height);
-                        var imglocker = img.LockBits(new Rectangle(0, 0, img.Width, img.Height), ImageLockMode.WriteOnly, PixelFormat.Format32bppArgb);
-                        Marshal.Copy(data, 0, imglocker.Scan0, data.Length);
+                        var imglocker = img.LockBits(new Rectangle(0, 0, img.Width, img.Height), ImageLockMode.WriteOnly, PixelFormat.Format32bppPArgb);
+                        var bgrabuff = new byte[img.Width * img.Height * 4];
+                        for (int i = 0; i < img.Width * img.Height; i++)
+                        {
+                            bgrabuff[i * 4 + 0] = data[i * 4 + 3];
+                            bgrabuff[i * 4 + 1] = data[i * 4 + 2];
+                            bgrabuff[i * 4 + 2] = data[i * 4 + 1];
+                            bgrabuff[i * 4 + 3] = data[i * 4 + 0];
+                        }
+                        Marshal.Copy(bgrabuff, 0, imglocker.Scan0, bgrabuff.Length);
                         img.UnlockBits(imglocker);
                         break;
                     }
                 case ImageFormat.RAW_BGR24:
                     {
                         img = new Bitmap(width, height);
-                        var imglocker = img.LockBits(new Rectangle(0, 0, img.Width, img.Height), ImageLockMode.WriteOnly, PixelFormat.Format24bppRgb);
-                        var data2 = new byte[data.Length];
-                        for (int i = 0; i < data.Length; i += 3)
+                        var imglocker = img.LockBits(new Rectangle(0, 0, img.Width, img.Height), ImageLockMode.WriteOnly, PixelFormat.Format32bppPArgb);
+                        var bgrabuff = new byte[img.Width * img.Height * 4];
+                        for (int i = 0; i < img.Width * img.Height; i++)
                         {
-                            data2[0] = data[2];
-                            data2[1] = data[1];
-                            data2[2] = data[0];
+                            bgrabuff[i * 4 + 0] = data[i * 3 + 0];
+                            bgrabuff[i * 4 + 1] = data[i * 3 + 1];
+                            bgrabuff[i * 4 + 2] = data[i * 3 + 2];
+                            bgrabuff[i * 4 + 3] = 0xFF;
                         }
-                        Marshal.Copy(data2, 0, imglocker.Scan0, data.Length);
+                        Marshal.Copy(bgrabuff, 0, imglocker.Scan0, bgrabuff.Length);
+                        img.UnlockBits(imglocker);
+                        break;
+                    }
+                case ImageFormat.RAW_RGBA32:
+                    {
+                        img = new Bitmap(width, height);
+                        var imglocker = img.LockBits(new Rectangle(0, 0, img.Width, img.Height), ImageLockMode.WriteOnly, PixelFormat.Format32bppPArgb);
+                        var bgrabuff = new byte[img.Width * img.Height * 4];
+                        for (int i = 0; i < img.Width * img.Height; i++)
+                        {
+                            bgrabuff[i * 4 + 0] = data[i * 4 + 2];
+                            bgrabuff[i * 4 + 1] = data[i * 4 + 1];
+                            bgrabuff[i * 4 + 2] = data[i * 4 + 0];
+                            bgrabuff[i * 4 + 3] = data[i * 4 + 3];
+                        }
+                        Marshal.Copy(bgrabuff, 0, imglocker.Scan0, bgrabuff.Length);
                         img.UnlockBits(imglocker);
                         break;
                     }
